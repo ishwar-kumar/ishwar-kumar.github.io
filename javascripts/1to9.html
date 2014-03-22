@@ -1,0 +1,126 @@
+<style type="text/css" media="screen">
+
+    body {
+        background-color: #999999;
+    }
+
+    table {
+        table-layout: fixed;
+        width: 400;
+    }
+
+    td {
+        padding: 20px;
+        border: 10px solid #555555;
+        background-color: #888888;
+        font: bold 30px Georgia, serif;
+    }
+</style>
+
+<script type="text/javascript">
+    var num = new Array();
+    for(var i=0;i<8;i++) {
+        num[i] = i+1;
+    }
+    num[8] = 0;
+    shuffleArray2();
+    var currentTime = +new Date();
+    display();
+
+    function display()
+    {
+        document.open();
+        document.write("<style>");
+        document.write("body {background-color: #999999;}");
+        document.write("table");
+        document.write("{table-layout: fixed; width: 400;}");
+        document.write(" td {");document.write("padding: 20px;");
+        document.write("border: 10px solid #555555;        background-color: #888888;");
+        document.write("font: bold 30px Georgia, serif;}</style>");
+        document.write("<table>");
+        for (var i = 0; i < 3; i++)
+        {
+            document.write("<tr>");
+            for (var j = 0; j < 3; j++)
+            {
+                document.write("<td>");
+                if(num[3*i + j] != 0)
+                    document.write(num[3 * i + j]);
+                document.write("</td>");
+            }
+            document.write("</tr>");
+        }
+        document.write("</table>");
+        if (num.toString() == "1,2,3,4,5,6,7,8, ")
+        {
+            var sec = +new Date();
+            var seconds = (sec - currentTime)/1000;
+            document.write("you solved in ");
+            document.write(seconds);
+            document.write(" seconds");
+            if(seconds < 20)
+                document.write("cool!!!");
+        }
+        else {
+            document.getElementsByTagName('body')[0].onkeyup = function()
+            {
+                var keyCode = event.keyCode;
+                makeMove(keyCode);
+                display();
+            }
+        }
+    }
+
+    function makeMove(move)
+    {
+        var pos = num.indexOf(0);   // 0 based
+        switch (move)
+        {
+            case 37:  //left
+                if ((pos + 1) % 3 == 0) break;
+                else
+                {
+                    num[pos] = num[pos + 1];
+                    num[pos + 1] = 0;
+                }
+                break;
+            case 38:  //up
+                if (pos > 5) break;
+                else
+                {
+                    num[pos] = num[pos + 3];
+                    num[pos + 3] = 0;
+                }
+                break;
+            case 39:  //right
+                if (pos % 3 == 0) break;
+                else
+                {
+                    num[pos] = num[pos - 1];
+                    num[pos - 1] = 0;
+                }
+                break;
+            case 40:  //down
+                if (pos < 3) break;
+                else
+                {
+                    num[pos] = num[pos - 3];
+                    num[pos - 3] = 0;
+                }
+                break;
+            default:
+                document.write("Just use arrow keys UP,DOWN,LEFT,RIGHT to play this game");
+        }
+    }
+
+    function shuffleArray2()
+    {
+        for (var i = 1000; i > 0; i--)
+        {
+            var j = Math.floor(Math.random() * 8);
+            j = j%4;
+            makeMove(37+j);
+        }
+    }
+
+</script>
