@@ -1,0 +1,11 @@
+server {
+        listen 18880;
+        server_name localhost;
+        root /usr/share/fk-w3-host-stats/src;
+
+        location / {
+         fastcgi_pass  127.0.0.1:9000;
+         fastcgi_index index.php;
+         include       /etc/nginx/fastcgi.conf;
+        }
+}

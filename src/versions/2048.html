@@ -1,0 +1,273 @@
+<html>
+<head>
+<script>
+    var BGColor = new Object();
+    BGColor[0]='#888888';
+    BGColor[2]='#BBBBBB';
+    BGColor[4]='#FFFFCC';
+    BGColor[8]='#FFCC66';
+    BGColor[16]='#FF9966';
+    BGColor[32]='#FF6600';
+    BGColor[64]='#FF0000';
+    BGColor[128]='#FFFF99';
+    BGColor[256]='#FFFF66';
+    BGColor[512]='#FFFF33';
+    BGColor[1024]='#FFFF00';
+    BGColor[2048]='#CCCC00';
+    BGColor[4096]='#99CC00';
+    BGColor[8192]='#333300';
+    var easy = 1;
+    var size = 4;
+    var num = new Array();
+    for (var i = 0; i < size * size; i++) num[i] = 0;
+    fillRandom();
+    var currentTime = +new Date();
+    //    document.write(num);
+    display();
+
+    function display(invalid)
+    {
+        document.open();
+
+        document.write("<style>");
+        document.write("body {background-color: #999999;}");
+        document.write("table");
+        document.write("{table-layout: fixed; width: 600; height: 500}");
+
+        document.write(" tr {min-height: 400; } ");
+
+        document.write(" td {");
+        document.write("padding: 20px; min-height: 400; ");
+        document.write("border: 10px solid #555555;        ");
+        document.write("font: bold 30px Georgia, serif;}</style>");
+        document.write("<table>");
+        for (var i = 0; i < 4; i++)
+        {
+            document.write("<tr>");
+            for (var j = 0; j < 4; j++)
+            {
+                document.write("<td height=100 bgcolor=" + BGColor[num[4*i+j]] + ">");
+//                document.write("<td height=100 bgcolor=\"#FF0000\">");
+                if (num[4 * i + j] != 0)
+                    document.write(num[4 * i + j]);
+                document.write("</td>");
+            }
+            document.write("</tr>");
+        }
+        document.write("</table>");
+        if(invalid) {
+            document.write("use arrow keys UP,DOWN,LEFT,RIGHT/WASD to play this game");
+        }
+        if (0)   // contains 2048
+        {
+            var sec = +new Date();
+            var seconds = (sec - currentTime) / 1000;
+            document.write("you solved in ");
+            document.write(seconds);
+            document.write(" seconds");
+            if (seconds < 100)
+                document.write(" COOL!!!");
+        }
+        else
+        {
+            document.getElementsByTagName('body')[0].onkeyup = function()
+            {
+                var keyCode = event.keyCode;
+                if(keyCode == 87) keyCode=38;
+                if(keyCode == 65) keyCode=37;
+                if(keyCode == 83) keyCode=40;
+                if(keyCode == 68) keyCode=39;
+
+                if((keyCode > 36) && (keyCode < 41)) {
+                    makeMove(keyCode);
+                    fillRandom();
+                    display(0);
+                } else {
+                    display(1);
+                }
+            }
+        }
+    }
+
+    function makeMove(move)
+    {
+        switch (move)
+        {
+            case 37:  //left
+                for (var i = 0; i < size; i++)
+                {
+                    var prev = 0;
+                    var cur = 0;
+                    var pos = 0;
+                    for (var j = 0; j < size; j++)
+                    {
+                        if (num[size * i + j] != 0)
+                        {
+                            cur = num[size * i + j];
+                            if (prev == cur)
+                            {
+                                num[size * i + pos] = 2 * prev;
+                                pos++;
+                                prev = 0;
+                                cur = 0;
+                            }
+                            if (prev != 0)
+                            {
+                                num[size * i + pos] = prev;
+                                pos++;
+                                prev = cur;
+                            }
+                            prev = cur;
+                        }
+                    }
+                    if (prev) {
+                        num[size * i + pos] = prev;
+                        pos++;
+                    }
+
+                    for(j=pos; j<size; j++) {
+                        num[size*i + j] = 0;
+                    }
+                }
+
+                break;
+            case 38:  //up
+                for (var i = 0; i < size; i++)
+                {
+                    var prev = 0;
+                    var cur = 0;
+                    var pos = 0;
+                    for (var j = 0; j < size; j++)
+                    {
+                        if (num[size * j + i] != 0)
+                        {
+                            cur = num[size * j + i];
+                            if (prev == cur)
+                            {
+                                num[size * pos + i] = 2 * prev;
+                                pos++;
+                                prev = 0;
+                                cur = 0;
+                            }
+                            if (prev != 0)
+                            {
+                                num[size * pos + i] = prev;
+                                pos++;
+                                prev = cur;
+                            }
+                            prev = cur;
+                        }
+                    }
+                    if (prev) {
+                        num[size * pos + i] = prev;
+                        pos++;
+                    }
+
+                    for(j=pos; j<size; j++) {
+                        num[size*j + i] = 0;
+                    }
+                }
+
+                break;
+            case 39:  //right
+                for (var i = 0; i < size; i++)
+                {
+                    var prev = 0;
+                    var cur = 0;
+                    var pos = size-1;
+                    for (var j = size-1; j >= 0; j--)
+                    {
+                        if (num[size * i + j] != 0)
+                        {
+                            cur = num[size * i + j];
+                            if (prev == cur)
+                            {
+                                num[size * i + pos] = 2 * prev;
+                                pos--;
+                                prev = 0;
+                                cur = 0;
+                            }
+                            if (prev != 0)
+                            {
+                                num[size * i + pos] = prev;
+                                pos--;
+                                prev = cur;
+                            }
+                            prev = cur;
+                        }
+                    }
+                    if (prev) {
+                        num[size * i + pos] = prev;
+                        pos--;
+                    }
+
+                    for(j=pos; j>=0; j--) {
+                        num[size*i + j] = 0;
+                    }
+                }
+                break;
+            case 40:  //down
+                for (var i = 0; i < size; i++)
+                {
+                    var prev = 0;
+                    var cur = 0;
+                    var pos = size-1;
+                    for (var j = size-1; j >= 0; j--)
+                    {
+                        if (num[size * j + i] != 0)
+                        {
+                            cur = num[size * j + i];
+                            if (prev == cur)
+                            {
+                                num[size * pos + i] = 2 * prev;
+                                pos--;
+                                prev = 0;
+                                cur = 0;
+                            }
+                            if (prev != 0)
+                            {
+                                num[size * pos + i] = prev;
+                                pos--;
+                                prev = cur;
+                            }
+                            prev = cur;
+                        }
+                    }
+                    if (prev) {
+                        num[size * pos + i] = prev;
+                        pos--;
+                    }
+
+                    for(j=pos; j>=0; j--) {
+                        num[size*j + i] = 0;
+                    }
+                }
+                break;
+            default:
+                document.write("Just use arrow keys UP,DOWN,LEFT,RIGHT to play this game");
+        }
+    }
+
+    function fillRandom()
+    {
+        var empty = new Array();
+        var total = 0;
+        for (var i = 0; i < size; i++)
+        {
+            for (var j = 0; j < size; j++)
+            {
+                if (num[4 * i + j] == 0)
+                {
+                    empty[total] = 4 * i + j;
+                    total++;
+                }
+            }
+        }
+
+        var pos = Math.floor(Math.random() * 16);
+        pos = pos % total;
+        num[empty[pos]] = 2;
+    }
+</script>
+</head>
+</html>
