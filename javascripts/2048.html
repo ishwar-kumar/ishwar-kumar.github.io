@@ -1,7 +1,8 @@
 <html>
-<head>
+
 <script>
     var BGColor = new Object();
+    var score = 0;
     BGColor[0]='#888888';
     BGColor[2]='#BBBBBB';
     BGColor[4]='#FFFFCC';
@@ -25,6 +26,9 @@
     //    document.write(num);
     display();
 
+    // invalid is 0 if last move was success,
+    // 1 if wrong keystroke was pressed
+    // and 2 if game is over.
     function display(invalid)
     {
         document.open();
@@ -38,8 +42,10 @@
 
         document.write(" td {");
         document.write("padding: 20px; min-height: 400; ");
-        document.write("border: 10px solid #555555;        ");
+        document.write("border: 10px solid #555555;");
         document.write("font: bold 30px Georgia, serif;}</style>");
+
+        document.write("<table><tr><td width=600 style='border: 0px'>");
         document.write("<table>");
         for (var i = 0; i < 4; i++)
         {
@@ -54,9 +60,16 @@
             }
             document.write("</tr>");
         }
-        document.write("</table>");
-        if(invalid) {
+        document.write("</table></td>");
+        document.write("<td width='100' valign='top' style='border: 0px;'>"  + "Score: <br>" + score + "</strong></td>");
+        document.write("</tr></table>");
+        if(invalid == 1) {
             document.write("use arrow keys UP,DOWN,LEFT,RIGHT/WASD to play this game");
+        }
+        if(invalid == 2) {
+            // tell that game is over, check highest scores
+
+
         }
         if (0)   // contains 2048
         {
@@ -80,8 +93,11 @@
 
                 if((keyCode > 36) && (keyCode < 41)) {
                     makeMove(keyCode);
-                    fillRandom();
-                    display(0);
+                    if(fillRandom() == 1) {
+                        display(2);
+                    } else {
+                        display(0);
+                    }
                 } else {
                     display(1);
                 }
@@ -107,6 +123,7 @@
                             if (prev == cur)
                             {
                                 num[size * i + pos] = 2 * prev;
+                                score += 2*prev;
                                 pos++;
                                 prev = 0;
                                 cur = 0;
@@ -145,6 +162,7 @@
                             if (prev == cur)
                             {
                                 num[size * pos + i] = 2 * prev;
+                                score += 2*prev;
                                 pos++;
                                 prev = 0;
                                 cur = 0;
@@ -183,6 +201,7 @@
                             if (prev == cur)
                             {
                                 num[size * i + pos] = 2 * prev;
+                                score += 2*prev;
                                 pos--;
                                 prev = 0;
                                 cur = 0;
@@ -220,6 +239,7 @@
                             if (prev == cur)
                             {
                                 num[size * pos + i] = 2 * prev;
+                                score += 2*prev;
                                 pos--;
                                 prev = 0;
                                 cur = 0;
@@ -263,11 +283,16 @@
                 }
             }
         }
+        if(total == 0) {
+            // Game Over
+            return 1;
+        }
 
         var pos = Math.floor(Math.random() * 16);
         pos = pos % total;
         num[empty[pos]] = 2;
+        return 0;
     }
 </script>
-</head>
+
 </html>
