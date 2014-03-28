@@ -1,131 +1,121 @@
 <html>
-<script type="text/javascript">
-    Err = {};
-    Err.Remoterr = {};
-    Err.Remoterr.onerror = function (msg, errorfileurl, lineno) {
-        var jsonstring, response, pageurl, cookies;
-        // Get some user input
-        pageurl = window.location.href;
-        cookies = document.cookie;
-
-        jsonstring = "{\"set\": {\"jserr\": " +
-                "{\"msg\": \"" + msg + "\", " +
-                "\"errorfileurl\": \"" + errorfileurl + "\", " +
-                "\"pageurl\": \"" + pageurl + "\", " +
-                "\"cookies\": \"" + cookies + "\", " +
-                "\"lineno\": \"" + lineno + "\", " +
-                "\"response\": \"" + response + "\"}}}";
-
-        document.write(jsonstring);
-        return false;
-    };
-    window.onerror = Err.Remoterr.onerror;
-</script>
 <body>
 <script type="text/javascript">
-var BGColor = new Object();
 var score = 0;
+var BGColor = new Object();
 BGColor[0] = '#888888';
 BGColor[2] = '#BBBBBB';
 BGColor[4] = '#FFFFCC';
-BGColor[8] = '#FFCC66';
-BGColor[16] = '#FF9966';
-BGColor[32] = '#FF6600';
-BGColor[64] = '#FF0000';
-BGColor[128] = '#FFFF99';
+BGColor[8] = '#FFFF99';
+BGColor[16] = '#FFCC66';
+BGColor[32] = '#FF9966';
+BGColor[64] = '#FF7766';
+BGColor[128] = '#FFFF66';
 BGColor[256] = '#FFFF66';
 BGColor[512] = '#FFFF33';
 BGColor[1024] = '#FFFF00';
-BGColor[2048] = '#CCCC00';
-BGColor[4096] = '#99CC00';
-BGColor[8192] = '#333300';
-BGColor[16384] = '#333300';
+BGColor[2048] = '#FF6600';
+BGColor[4096] = '#FF66FF';
+BGColor[8192] = '#FF33CC';
+BGColor[16384] = '#FF3399';
 
-var empty,total, i, j, sec, prev, cur, pos, keyCode;
 var easy = 1;
 var size = 4;
 var num = new Array();
-for (i = 0; i < size * size; i++) num[i] = 0;
-fillRandom();
+for (var i = 0; i < size * size; i++) num[i] = 0;
+//num[12]=16384;
+//num[13]=8192;
+//num[14]=4096;
+//num[15]=2048;
+//num[11]=1024;
+//num[10]=512;
+//num[9]=256;
+//num[8]=128;
+//num[4]=64;
+//num[5]=32;
+//num[6]=16;
+//num[7]=8;
+//num[3]=4;
+fillRandom(num);
 var currentTime = +new Date();
-//    document.write(num);
-var invalid = 0;
-display();
+display(0, num);
+function start(event) {
+//    document.body.removeEventListener('keydown', callback, true);
+    var keyCode = event.keyCode;
+    if (keyCode == 87) keyCode = 38;
+    if (keyCode == 65) keyCode = 37;
+    if (keyCode == 83) keyCode = 40;
+    if (keyCode == 68) keyCode = 39;
 
-// invalid is 0 if last move was success,
-// 1 if wrong keystroke was pressed
-// and 2 if game is over.
-function display() {
-    document.open();
-
-    document.write("<style>");
-    document.write("body {background-color: #999999;}");
-    document.write("table");
-    document.write("{table-layout: fixed; width: 600; height: 500}");
-
-    document.write(" tr {min-height: 400; } ");
-
-    document.write(" td {");
-    document.write("padding: 20px; min-height: 400; ");
-    document.write("border: 10px solid #555555;");
-    document.write("font: bold 30px Georgia, serif;}</style>");
-
-    document.write("<table><tr><td width=600 style='border: 0px'>");
-    document.write("<table>");
-    for (i = 0; i < 4; i++) {
-        document.write("<tr>");
-        for (j = 0; j < 4; j++) {
-            document.write("<td height=100 bgcolor=" + BGColor[num[4 * i + j]] + ">");
-            if (num[4 * i + j] != 0)
-                document.write(num[4 * i + j]);
-            document.write("</td>");
+    if ((keyCode > 36) && (keyCode < 41)) {
+        num = makeMove(keyCode, num);
+        num = fillRandom(num);
+        if (num[16] == 1) {
+            display(2, num);
+        } else {
+            display(0, num);
         }
-        document.write("</tr>");
-    }
-    document.write("</table></td>");
-    document.write("<td width='100' valign='top' style='border: 0px;'>" + "Score: <br>" + score + "</strong></td>");
-    document.write("</tr></table>");
-
-    if (invalid == 1) {
-        document.write("use arrow keys UP,DOWN,LEFT,RIGHT/WASD to play this game");
-    }
-    if (invalid == 2) {
-        // tell that game is over, check highest scores
-        sec = +new Date();
-        document.write("you scored " + score + " in " + (sec - currentTime) / 1000 + " seconds");
     } else {
-        document.getElementsByTagName('body')[0].onkeydown = function(event) {
-            keyCode = event.keyCode;
-            if (keyCode == 87) keyCode = 38;
-            if (keyCode == 65) keyCode = 37;
-            if (keyCode == 83) keyCode = 40;
-            if (keyCode == 68) keyCode = 39;
-
-            if ((keyCode > 36) && (keyCode < 41)) {
-                makeMove(keyCode);
-                if (fillRandom() == 1) {
-                    invalid = 2;
-                    display();
-                } else {
-                    invalid = 0;
-                    display();
-                }
-            } else {
-                invalid = 1;
-                display();
-            }
-        }
+        display(1, num);
     }
 }
 
-function makeMove(move) {
+function display(invalid, num) {
+    var strBuilder = [];
+    strBuilder.push("<style>");
+    strBuilder.push("body {background-color: #999999;}");
+    strBuilder.push("table");
+    strBuilder.push("{table-layout: fixed; width: 600; height: 500}");
+
+    strBuilder.push(" tr {min-height: 400; } ");
+
+    strBuilder.push(" td {");
+    strBuilder.push("padding: 20px; min-height: 400; ");
+    strBuilder.push("border: 10px solid #555555;");
+    strBuilder.push('font: bold 30px Georgia, serif;}</style>');
+
+    strBuilder.push("<table><tr><td width=600 style='border: 0px'>");
+    strBuilder.push("<table>");
+    document.open();
+
+    for (var i = 0; i < 4; i++) {
+        strBuilder.push("<tr>");
+        for (var j = 0; j < 4; j++) {
+            strBuilder.push("<td height=100 bgcolor=", BGColor[num[4*i + j]] ,">");
+            if (num[4 * i + j] != 0)
+                strBuilder.push(num[4 * i + j]);
+            strBuilder.push("</td>");
+        }
+        strBuilder.push("</tr>");
+    }
+    strBuilder.push("</table></td>");
+    strBuilder.push("<td width='100' valign='top' style='border: 0px;'>Score: <br>" + score + "</strong></td>");
+    strBuilder.push("</tr></table>");
+
+    if (invalid == 1) {
+        strBuilder.push('use arrow keys UP,DOWN,LEFT,RIGHT/WASD to play this game');
+        document.write(strBuilder.join(''));
+    }
+    if (invalid == 2) {
+        var sec = +new Date();
+        strBuilder.push("you scored ", score, " in ", (sec - currentTime) / 1000, " seconds");
+        document.write(strBuilder.join(''));
+    } else {
+        document.write(strBuilder.join(''));
+        document.body.addEventListener('keydown', start, true);
+    }
+    document.close();
+}
+
+function makeMove(move, num) {
+    var prev, cur, pos;
     switch (move) {
         case 37:  //left
-            for (i = 0; i < size; i++) {
+            for (var i = 0; i < size; i++) {
                 prev = 0;
                 cur = 0;
                 pos = 0;
-                for (j = 0; j < size; j++) {
+                for (var j = 0; j < size; j++) {
                     if (num[size * i + j] != 0) {
                         cur = num[size * i + j];
                         if (prev == cur) {
@@ -263,13 +253,14 @@ function makeMove(move) {
             }
             break;
     }
+    return num;
 }
 
-function fillRandom() {
-    empty = new Array();
-    total = 0;
-    for (i = 0; i < size; i++) {
-        for (j = 0; j < size; j++) {
+function fillRandom(num) {
+    var empty = new Array();
+    var total = 0, pos;
+    for (var i = 0; i < size; i++) {
+        for (var j = 0; j < size; j++) {
             if (num[4 * i + j] == 0) {
                 empty[total] = 4 * i + j;
                 total++;
@@ -287,14 +278,17 @@ function fillRandom() {
             }
             if (poss == 1) break;
         }
-        // Game Over
-        if (poss == 0) return 1;
+        if (poss == 0) {
+            num[16] = 1;
+            return num;
+        }
     }
 
     pos = Math.floor(Math.random() * 16);
     pos = pos % total;
     num[empty[pos]] = 2;
-    return 0;
+    num[16] = 0;
+    return num;
 }
 </script>
 </body>
