@@ -98,7 +98,7 @@ function display(invalid, num) {
     }
     if (invalid == 2) {
         var sec = +new Date();
-        strBuilder.push("you scored ", score, " in ", (sec - currentTime) / 1000, " seconds");
+        strBuilder.push("you scored ", score, " in ", (sec - currentTime) / 60000, " minutes ", ((sec - currentTime) / 1000) % 60, " seconds");
         document.write(strBuilder.join(''));
     } else {
         document.write(strBuilder.join(''));
