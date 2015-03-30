@@ -11,7 +11,7 @@
 
 
 
-<body bgcolor="#FFFF00" link="#FFFFFF" vlink="#FFFF00" alink="#FFFF00">
+<body link="#FFFFFF" vlink="#FFFF00" alink="#FFFF00" bgcolor="#999999">
 
 
 
@@ -19,7 +19,7 @@
 
   <tr>
 
-    <td width="50%" bgcolor="#000000"><font color="#FFFF00"><font size="4"><b>Checkers
+    <td width="50%" ><font ><font size="4"><b>Checkers
 
       -&nbsp; </b></font><font size="3"><b>1 player versus the computer.&nbsp;
 
@@ -137,6 +137,8 @@ var toggler = null;
 
 var togglers = 0;
 
+var optimize_perf = true
+
 
 
 function Board() {
@@ -165,6 +167,7 @@ function Board() {
 var recursions = 0;
 var board;
 
+// TODO add randomness for similar moves
 ///*
 Board(1,0,1,0,1,0,1,0,
       0,1,0,1,0,1,0,1,
@@ -176,13 +179,13 @@ Board(1,0,1,0,1,0,1,0,
       0,-1,0,-1,0,-1,0,-1);
 //*/
  /*
-Board(1,0,0,0,0,0,1,0,
-      0,1,0,0,0,1,0,1,
-      1,0,-1,0,0,0,1,0,
-      0,0,0,1,0,1,0,-1,
+Board(0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,
       1,0,0,0,0,0,0,0,
-      0,0,0,-1,0,0,0,-1,
-      0,0,0,0,-1,0,-1,0,
+      0,0,0,1,0,0,0,-1.4,
+      1,0,0,0,1,0,0,0,
+      0,1,0,0,0,1,0,-1,
+      0,0,-1,0,-1,0,1,0,
       0,-1,0,-1,0,-1,0,-1);
  */
 function message(str) {
@@ -293,7 +296,7 @@ function toggle(x,y) {
 
   if (piece_toggled)
 
-   draw(selected.x,selected.y,"you1"+((board[selected.x][selected.y]==1.1)?"k":"")+".gif");
+   draw(selected.x,selected.y,"you1"+((board[selected.x][selected.y]==1.4)?"k":"")+".gif");
 
   if (piece_toggled && (selected.x == x) && (selected.y == y)) {
 
@@ -305,7 +308,7 @@ function toggle(x,y) {
 
    piece_toggled = true;
 
-   draw(x,y,"you2"+((board[x][y]==1.1)?"k":"")+".gif");
+   draw(x,y,"you2"+((board[x][y]==1.4)?"k":"")+".gif");
 
   }
 
@@ -315,7 +318,7 @@ function toggle(x,y) {
 
   if ((piece_toggled) && (integ(board[selected_c.x][selected_c.y])==-1))
 
-   draw(selected_c.x,selected_c.y,"me1"+((board[selected_c.x][selected_c.y]==-1.1)?"k":"")+".gif");
+   draw(selected_c.x,selected_c.y,"me1"+((board[selected_c.x][selected_c.y]==-1.4)?"k":"")+".gif");
 
   if (piece_toggled && (selected_c.x == x) && (selected_c.y == y)) {
 
@@ -325,7 +328,7 @@ function toggle(x,y) {
 
    piece_toggled = true;
 
-   draw(x,y,"me2"+((board[x][y]==-1.1)?"k":"")+".gif");
+   draw(x,y,"me2"+((board[x][y]==-1.4)?"k":"")+".gif");
 
   }
 
@@ -535,13 +538,13 @@ function king_me(x,y) {
 
  if (board[x][y] == 1) {
 
-  board[x][y] = 1.1; // king you
+  board[x][y] = 1.4; // king you
 
   draw(x,y,"you2k.gif");
 
  } else if (board[x][y] == -1) {
 
-  board[x][y] = -1.1; // king me
+  board[x][y] = -1.4; // king me
 
   draw(x,y,"me2k.gif");
 
@@ -664,9 +667,9 @@ function try_move_turn(board_orig, from , to, player) {
         }
         if ((board_orig[to.x][to.y] == player) && (2*(to.y) == 7+player*7)) {
             if (board_orig[to.x][to.y] == 1) {
-              board_orig[to.x][to.y] = 1.1; // king you
+              board_orig[to.x][to.y] = 1.4; // king you
             } else if (board_orig[to.x][to.y] == -1) {
-              board_orig[to.x][to.y] = -1.1; // king me
+              board_orig[to.x][to.y] = -1.4; // king me
             }
         }
         return
@@ -689,9 +692,9 @@ function score_by_jumps(board_orig, cur_coord, player) {
            });
 
            try_move_turn(board_orig_editable, cur_coord, to, player);
-           var extra_score = score_by_jumps(board_orig_editable, to, player)
-           if(score < extra_score + 1) {
-               score = 1 + extra_score;
+           var extra_score = score_by_jumps(board_orig_editable, to, player) + 10*abs(board_orig[(cur_coord.x+to.x)/2][(cur_coord.y+to.y)/2])
+           if(score < extra_score) {
+               score = extra_score;
                board_orig_return = board_orig_editable.map(function(arr) {
                    return arr.slice();
                });
@@ -705,11 +708,12 @@ function score_by_jumps(board_orig, cur_coord, player) {
    return score;
 }
 
-function try_move(board_orig, response, player, difficulty_level) {
+function try_move(board_orig, response, player, difficulty_level, threshold) {
   var first_valid = false;
   recursions++
 
   if(difficulty_level==0 && player == -1) {
+      response.score=0;
       return
   }
 
@@ -739,23 +743,27 @@ function try_move(board_orig, response, player, difficulty_level) {
            });
            try_move_turn(board_orig, from, to, player);
 
-           var response_child = {from:dummy_coord, to:dummy_coord, score:0};
+           var response_child = {from:dummy_coord, to:dummy_coord, score:-10000};
            if(difficulty_level > 0 || player == -1)
-               try_move(board_orig, response_child, -1*player, difficulty_level);
+               try_move(board_orig, response_child, -1*player, difficulty_level, -1*response.score);
+           else
+               response_child.score=0;
 
            var net_score = 0 - response_child.score
-
+           if(difficulty_level == 2) {
+               //console.log(from.x+","+from.y+" to "+to.x+","+to.y+" "+net_score+" vs "+response.score+" level:"+difficulty_level+" player:"+player+" fv:"+first_valid)
+           }
            if(response.score < net_score || !first_valid) {
            //   console.log(from.x+","+from.y+" to "+to.x+","+to.y+" "+net_score+"<--"+response.score+" level:"+difficulty_level+" player:"+player+" fv:"+first_valid)
               first_valid = true
               response.from=from
               response.to=to
               response.score=net_score
+              if(optimize_perf && (response.score >= threshold)) return;
            }
        }
    }
 
-   var scored_flag = true;
    for(var key in moves_array_2) {
        var var_coord = moves_array_2[key]
        var to = coord(i+var_coord.x,j+var_coord.y)
@@ -767,21 +775,27 @@ function try_move(board_orig, response, player, difficulty_level) {
               return arr.slice();
            });
            try_move_turn(board_orig, from, to, player);
-           var net_score = 1
+           var net_score = 10*abs(board_orig[(from.x+to.x)/2][(from.y+to.y)/2])
            var extra_score = score_by_jumps(board_orig, to, player)
            net_score = net_score + extra_score
 
-           var response_child = {from:dummy_coord, to:dummy_coord, score:0};
+           var response_child = {from:dummy_coord, to:dummy_coord, score:-10000};
            if(difficulty_level > 0 || player == -1)
-               try_move(board_orig, response_child, -1*player, difficulty_level);
-           net_score = net_score - response_child.score
+               try_move(board_orig, response_child, -1*player, difficulty_level, net_score + difficulty_level - response.score);
+           else
+               response_child.score=0;
 
+           net_score = net_score + difficulty_level - response_child.score
+           if(difficulty_level == 2) {
+//               console.log(from.x+","+from.y+" to "+to.x+","+to.y+" "+net_score+" vs "+response.score+" level:"+difficulty_level+" player:"+player+" fv:"+first_valid)
+           }
            if(response.score < net_score || !first_valid) {
            //   console.log(from.x+","+from.y+" to "+to.x+","+to.y+" "+net_score+"<--"+response.score+" level:"+difficulty_level+" player:"+player+" fv:"+first_valid)
               first_valid = true
               response.from=from
               response.to=to
               response.score=net_score
+              if(optimize_perf && (response.score >= threshold)) return;
            }
         }
    }
@@ -792,15 +806,15 @@ function try_move(board_orig, response, player, difficulty_level) {
 
 function computer() {
 
-    var difficulty_level = 3;
+    var difficulty_level = 4;
     var board_orig = board.map(function(arr) {
         return arr.slice();
     });
     var dummy_coord = coord(0,0)
 
-    var response = {from:dummy_coord, to:dummy_coord, score:0};
+    var response = {from:dummy_coord, to:dummy_coord, score:-10000};
 
-    try_move(board_orig, response, -1, difficulty_level, false);
+    try_move(board_orig, response, -1, difficulty_level, 10000);
     console.log("recursions done for this move:" + recursions);
     recursions=0;
 
@@ -824,7 +838,7 @@ function computer() {
 
 function jump(i,j) {
 
- if (board[i][j] == -1.1) {
+ if (board[i][j] == -1.4) {
 
   if (legal_move(coord(i,j),coord(i+2,j+2))) {
 
@@ -872,7 +886,7 @@ function jump(i,j) {
 
 function single(i,j) {
 
- if (board[i][j] == -1.1) {
+ if (board[i][j] == -1.4) {
 
   if (legal_move(coord(i,j),coord(i+1,j+1))) {
 
@@ -969,11 +983,11 @@ function prevent(end,s) {
 
    return move_comp(coord(i+1,j+1),coord(i,j));
 
- } else if ((board[i-1][j-1]==-1.1) && (legal_move(coord(i-1,j-1),coord(i,j)))) {
+ } else if ((board[i-1][j-1]==-1.4) && (legal_move(coord(i-1,j-1),coord(i,j)))) {
 
    return move_comp(coord(i-1,j-1),coord(i,j));
 
- } else if ((board[i+1][j-1]==-1.1) && (legal_move(coord(i+1,j-1),coord(i,j)))) {
+ } else if ((board[i+1][j-1]==-1.4) && (legal_move(coord(i+1,j-1),coord(i,j)))) {
 
    return move_comp(coord(i+1,j-1),coord(i,j));
 
@@ -1013,9 +1027,9 @@ function wise(from,to) {
 
  if ((se==0) && (integ(nw)==1)) return false;
 
- if ((nw==0) && (se==1.1)) return false;
+ if ((nw==0) && (se==1.4)) return false;
 
- if ((ne==0) && (sw==1.1)) return false;
+ if ((ne==0) && (sw==1.4)) return false;
 
  return true;
 
@@ -1051,7 +1065,7 @@ my_turn = true;
 
   <tr>
 
-    <td width="100%" bgcolor="#FFFF99">
+    <td width="100%">
 
       <p align=center>
 
