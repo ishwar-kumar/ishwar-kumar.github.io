@@ -138,11 +138,16 @@ var toggler = null;
 
 var togglers = 0;
 
-var optimize_perf = true
-
-var enable_randomization = true
-
 var king_value = 1.4
+var your_pending_count = 12;
+var my_pending_count = 12;
+
+var optimize_perf = true
+var enable_randomization = true
+var game_level = 4;
+var debug = false;
+var computations_left = 500000
+
 
 function Board() {
 
@@ -170,7 +175,7 @@ function Board() {
 var recursions = 0;
 var board;
 
-///*
+//*
 Board(1,0,1,0,1,0,1,0,
       0,1,0,1,0,1,0,1,
       1,0,1,0,1,0,1,0,
@@ -179,22 +184,21 @@ Board(1,0,1,0,1,0,1,0,
       0,-1,0,-1,0,-1,0,-1,
       -1,0,-1,0,-1,0,-1,0,
       0,-1,0,-1,0,-1,0,-1);
-//*/
-/*
-Board(1,0,1,0,1,0,1,0,
-      0,0,0,1,0,1,0,1,
-      1,0,1,0,1,0,0,0,
-      0,1,0,0,0,0,0,1,
-      0,0,0,0,0,0,-1,0,
-      0,-1,0,-1,0,-1,0,-1,
-      -1,0,-1,0,-1,0,-1,0,
-      0,-1,0,-1,0,-1,0,0);
- */
+/*/
+Board(0,0,0,0,0,0,1,0,
+      0,0,0,-1.4,0,-1,0,1,
+      0,0,0,0,-1,0,-1,0,
+      0,0,0,0,0,-1,0,0,
+      0,0,0,0,-1.4,0,0,0,
+      0,-1.4,0,0,0,0,0,0,
+      0,0,0,0,0,0,1.4,0,
+      0,0,0,0,0,0,0,0);
+*/
 function message(str) {
 
  if (!game_is_over)
 
-  document.disp.message.value = str;
+  document.disp.message.value = str + " your score: " + (12 - your_pending_count) + " my score: " + (12 - my_pending_count);
 
 }
 
@@ -370,8 +374,10 @@ function integ(num) {
 }
 
 function makeRandomMove(piece) {
-var random = getRandomInt(1,2);
-return  ((enable_randomization && (random == 1)) || (piece == integ(piece)))
+
+  var random = getRandomInt(1,2);
+
+  return  ((enable_randomization && (random == 1)) || (piece == integ(piece)))
 }
 
 function abs(num) {
@@ -401,35 +407,24 @@ function concatenate(arr1,arr2) {
 }
 
 function legal_move(from,to) {
-
  if ((to.x < 0) || (to.y < 0) || (to.x > 7) || (to.y > 7)) return false;
 
  piece = board[from.x][from.y];
-
  distance = coord(to.x-from.x,to.y-from.y);
 
  if ((distance.x == 0) || (distance.y == 0)) {
-
   message("You may only move diagonally.");
-
   return false;
-
  }
 
  if (abs(distance.x) != abs(distance.y)) {
-
   message("Invalid move.");
-
   return false;
-
  }
 
  if (abs(distance.x) > 2) {
-
   message("Invalid move.");
-
   return false;
-
  }
 
 // if ((abs(distance.x) == 1) && double_jump) {    TODO
@@ -437,25 +432,17 @@ function legal_move(from,to) {
 // }
 
  if ((board[to.x][to.y] != 0) || (piece == 0)) {
-
   return false;
-
  }
 
  if ((abs(distance.x) == 2)
-
  && (integ(piece) != -integ(board[from.x+sign(distance.x)][from.y+sign(distance.y)]))) {
-
   return false;
-
  }
 
  if ((integ(piece) == piece) && (sign(piece) != sign(distance.y))) {
-
   return false;
-
  }
-
  return true;
 }
 
@@ -593,6 +580,8 @@ function swap(from,to) {
 }
 
 function remove(x,y) {
+ if(comp_move) my_pending_count = my_pending_count-1;
+ if(my_turn) your_pending_count = your_pending_count-1;
 
  if (my_turn || comp_move)
 
@@ -668,13 +657,6 @@ function game_over() { // make sure game is not over (return false if game is ov
 
 }
 
-
-
-// the higher the jump_priority, the more often the computer will take the jump over the safe move
-
-var jump_priority = 10;
-
-
 function try_move_turn(board_orig, from , to, player) {
         dummy_num = board_orig[from.x][from.y];
         board_orig[from.x][from.y] = board_orig[to.x][to.y];
@@ -726,23 +708,47 @@ function score_by_jumps(board_orig, cur_coord, player) {
    return score;
 }
 
-function try_move(board_orig, response, player, difficulty_level, threshold) {
+function try_move(board_orig, response, player, depth, threshold, this_comp_left) {
   var first_valid = false;
   recursions++
 
-  if(difficulty_level==0 && player == -1) {
-      response.score=0;
+  if(((player == -1) && (my_pending_count == 0)) || ((player == 1) && (your_pending_count == 0))) {
+      response.score=-10000;
       return
   }
 
-  if(player == -1) difficulty_level=difficulty_level-1;
+  var moves_array = [coord(1,1),coord(1,-1),coord(-1,1),coord(-1,-1),coord(2,2),coord(2,-2),coord(-2,2),coord(-2,-2)]
+  var moves_array_1 = [coord(1,1),coord(1,-1),coord(-1,1),coord(-1,-1)]
+  var moves_array_2 = [coord(2,2),coord(2,-2),coord(-2,2),coord(-2,-2)]
+  var dummy_coord = coord(0,0)
+
+  var possible_moves = 0;
+  for(var j=0;j<8;j++) {
+    for(var i=0;i<8;i++) {
+     if (integ(board_orig[i][j]) == player) {
+       var from = coord(i,j);
+
+       for(var key in moves_array) {
+         var var_coord = moves_array[key];
+         var to = coord(i+var_coord.x,j+var_coord.y)
+         if (legal_move_simulate(board_orig,from,to))
+             possible_moves=possible_moves+1;
+       }
+     }
+    }
+  }
+
+  if(possible_moves == 0) {
+    response.score=-10000;
+    return;
+  }
+  var next_comp_left = this_comp_left/possible_moves
+
+  if(player == -1) depth=depth+1;
 
   var board_orig_backup = board_orig.map(function(arr) {
     return arr.slice();
   });
-   var moves_array_1 = [coord(1,1),coord(1,-1),coord(-1,1),coord(-1,-1)]
-   var moves_array_2 = [coord(2,2),coord(2,-2),coord(-2,2),coord(-2,-2)]
-   var dummy_coord = coord(0,0)
 
   for(var j=0;j<8;j++) {
   for(var i=0;i<8;i++) {
@@ -753,7 +759,7 @@ function try_move(board_orig, response, player, difficulty_level, threshold) {
        var var_coord = moves_array_1[key];
        var to = coord(i+var_coord.x,j+var_coord.y)
        if (legal_move_simulate(board_orig_backup,from,to)) {
-           if(difficulty_level == 3) {
+           if(depth == 0) {
                var added_for_break_points = true;
            }
            board_orig = board_orig_backup.map(function(arr) {
@@ -766,14 +772,14 @@ function try_move(board_orig, response, player, difficulty_level, threshold) {
            if(board_orig_backup[from.x][from.y] == integ(board_orig_backup[from.x][from.y])) {
                var not_queen = 1;
            }
-           if(difficulty_level > 0 || player == -1)
-               try_move(board_orig, response_child, -1*player, difficulty_level, not_queen-1*response.score);
+           if(next_comp_left >= 1)
+               try_move(board_orig, response_child, -1*player, depth, not_queen-1*response.score,next_comp_left);
            else
                response_child.score=0;
 
            var net_score = not_queen - response_child.score
-           if(difficulty_level >= 2) {
-               //console.log(from.x+","+from.y+" to "+to.x+","+to.y+" 0-"+response_child.score+" vs "+response.score+" level:"+difficulty_level+" player:"+player+" fv:"+first_valid)
+           if(debug == true && (depth <= 2)) {
+               console.log(from.x+","+from.y+" to "+to.x+","+to.y+" 0-"+response_child.score+" vs "+response.score+" level:"+depth+" player:"+player+" fv:"+first_valid)
            }
            if(response.score < net_score || !first_valid) {
               first_valid = true
@@ -789,7 +795,7 @@ function try_move(board_orig, response, player, difficulty_level, threshold) {
        var var_coord = moves_array_2[key]
        var to = coord(i+var_coord.x,j+var_coord.y)
        if (legal_move_simulate(board_orig_backup,from,to)) {
-           if(difficulty_level == 3) {
+           if(depth == 0) {
                var added_for_break_points = true;
            }
            board_orig = board_orig_backup.map(function(arr) {
@@ -805,14 +811,14 @@ function try_move(board_orig, response, player, difficulty_level, threshold) {
            if(board_orig_backup[from.x][from.y] == integ(board_orig_backup[from.x][from.y])) {
                var not_queen = 1;
            }
-           if(difficulty_level > 0 || player == -1)
-               try_move(board_orig, response_child, -1*player, difficulty_level, not_queen + net_score + difficulty_level - response.score);
+           if(next_comp_left >= 1)
+               try_move(board_orig, response_child, -1*player, depth, not_queen + net_score - depth - response.score,next_comp_left);
            else
                response_child.score=0;
 
-           net_score = net_score + not_queen + difficulty_level - response_child.score
-           if(difficulty_level >= 2) {
-               //console.log(from.x+","+from.y+" to "+to.x+","+to.y+" "+(net_score+response_child.score)+"-"+response_child.score+" vs "+response.score+" level:"+difficulty_level+" player:"+player+" fv:"+first_valid)
+           net_score = net_score + not_queen - depth - response_child.score
+           if(debug == true && (depth <= 2)) {
+               console.log(from.x+","+from.y+" to "+to.x+","+to.y+" "+(net_score-extra_score+response_child.score)+"+"+extra_score+"-"+response_child.score+" vs "+response.score+" level:"+depth+" player:"+player+" fv:"+first_valid)
            }
            if(response.score < net_score || !first_valid) {
               first_valid = true
@@ -825,12 +831,12 @@ function try_move(board_orig, response, player, difficulty_level, threshold) {
    }
   }
   }}
-  //console.log(response.from.x+","+response.from.y+" to "+response.to.x+","+response.to.y+" "+response.score+" level:"+difficulty_level+" player:"+player)
+  //console.log(response.from.x+","+response.from.y+" to "+response.to.x+","+response.to.y+" "+response.score+" level:"+depth+" player:"+player)
 }
 
 function computer() {
+    var start = new Date().getTime();
 
-    var difficulty_level = 4;
     var board_orig = board.map(function(arr) {
         return arr.slice();
     });
@@ -838,8 +844,10 @@ function computer() {
 
     var response = {from:dummy_coord, to:dummy_coord, score:-10000};
 
-    try_move(board_orig, response, -1, difficulty_level, 10000);
-    console.log("recursions done for this move:" + recursions);
+    try_move(board_orig, response, -1, 0, 10000, computations_left);
+    var end = new Date().getTime();
+
+    console.log("recursions done for this move:" + recursions + " in " + ((end-start)/1000) + " sec");
     recursions=0;
 
     // Pass this new array, turn=1/-1, depth_left to our new method
@@ -856,210 +864,41 @@ function computer() {
     message("You beat me!!");
     game_is_over = true;
   }
- safe_from = safe_to = null;
- return false;
+  safe_from = safe_to = null;
+  return false;
 }
 
 function jump(i,j) {
+   var moves_array_2 = [coord(2,2),coord(2,-2),coord(-2,2),coord(-2,-2)]
 
- if (board[i][j] == -king_value) {
+   var from = coord(i,j)
+   var optimal = coord(0,0);
+   var score = -1
+   var valid_move_available = false;
+   for(var key in moves_array_2) {
+       var var_coord = moves_array_2[key]
+       var to = coord(i+var_coord.x,j+var_coord.y)
+       if (legal_move_simulate(board,from,to)) {
+           valid_move_available = true;
+           board_orig = board.map(function(arr) {
+              return arr.slice();
+           });
+           try_move_turn(board_orig, from, to, -1);
+           var net_score = 10*abs(board[(from.x+to.x)/2][(from.y+to.y)/2])
+           var extra_score = score_by_jumps(board_orig, to, -1)
 
-  if (legal_move(coord(i,j),coord(i+2,j+2))) {
-
-   move_comp(coord(i,j),coord(i+2,j+2));
-
-   setTimeout("jump("+(i+2)+","+(j+2)+");",500);
-
-   return true;
-
-  } if (legal_move(coord(i,j),coord(i-2,j+2))) {
-
-   move_comp(coord(i,j),coord(i-2,j+2));
-
-   setTimeout("jump("+(i-2)+","+(j+2)+");",500);
-
-   return true;
-
-  }
-
- } if (integ(board[i][j]) == -1) {
-
-  if (legal_move(coord(i,j),coord(i-2,j-2))) {
-
-   move_comp(coord(i,j),coord(i-2,j-2));
-
-   setTimeout("jump("+(i-2)+","+(j-2)+");",500);
-
-   return true;
-
-  } if (legal_move(coord(i,j),coord(i+2,j-2))) {
-
-   move_comp(coord(i,j),coord(i+2,j-2));
-
-   setTimeout("jump("+(i+2)+","+(j-2)+");",500);
-
-   return true;
-
-  }
-
- }
-
- return false;
-
-}
-
-function single(i,j) {
-
- if (board[i][j] == -king_value) {
-
-  if (legal_move(coord(i,j),coord(i+1,j+1))) {
-
-   safe_from = coord(i,j);
-
-   safe_to = coord(i+1,j+1);
-
-   if (wise(coord(i,j),coord(i+1,j+1))) {
-
-    move_comp(coord(i,j),coord(i+1,j+1));
-
-    return true;
-
+           if(net_score+extra_score > score) {
+               score = net_score+extra_score;
+               optimal.x = to.x; optimal.y = to.y;
+           }
+       }
    }
+   if(valid_move_available == false) return false;
 
-  } if (legal_move(coord(i,j),coord(i-1,j+1))) {
-
-   safe_from = coord(i,j);
-
-   safe_to = coord(i-1,j+1);
-
-   if (wise(coord(i,j),coord(i-1,j+1))) {
-
-    move_comp(coord(i,j),coord(i-1,j+1));
-
-    return true;
-
-   }
-
-  }
-
- } if (integ(board[i][j]) == -1) {
-
-  if (legal_move(coord(i,j),coord(i+1,j-1))) {
-
-   safe_from = coord(i,j);
-
-   safe_to = coord(i+1,j-1);
-
-   if (wise(coord(i,j),coord(i+1,j-1))) {
-
-    move_comp(coord(i,j),coord(i+1,j-1));
-
-    return true;
-
-   }
-
-  } if (legal_move(coord(i,j),coord(i-1,j-1))) {
-
-   safe_from = coord(i,j);
-
-   safe_to = coord(i-1,j-1);
-
-   if (wise(coord(i,j),coord(i-1,j-1))) {
-
-    move_comp(coord(i,j),coord(i-1,j-1));
-
-    return true;
-
-   }
-
-  }
-
- }
-
- return false;
-
+   move_comp(from,optimal);
+   setTimeout("jump("+optimal.x+","+optimal.y+");",500);
+   return true;
 }
-
-function possibilities(x,y) {
-
- if (!jump(x,y))
-    if (!single(x,y)) return true;
-    else return false;
- else
-    return false;
-}
-
-function prevent(end,s) {
-
- i = end.x;
-
- j = end.y;
-
- if (!possibilities(s.x,s.y))
-
-  return true;
-
- else if ((integ(board[i-1][j+1])==-1) && (legal_move(coord(i-1,j+1),coord(i,j)))) {
-
-   return move_comp(coord(i-1,j+1),coord(i,j));
-
- } else if ((integ(board[i+1][j+1])==-1) && (legal_move(coord(i+1,j+1),coord(i,j)))) {
-
-   return move_comp(coord(i+1,j+1),coord(i,j));
-
- } else if ((board[i-1][j-1]==-king_value) && (legal_move(coord(i-1,j-1),coord(i,j)))) {
-
-   return move_comp(coord(i-1,j-1),coord(i,j));
-
- } else if ((board[i+1][j-1]==-king_value) && (legal_move(coord(i+1,j-1),coord(i,j)))) {
-
-   return move_comp(coord(i+1,j-1),coord(i,j));
-
- } else {
-
-  return false;
-
- }
-
-}
-
-function wise(from,to) {
-
- i = to.x;
-
- j = to.y;
-
- n = (j>0);
-
- s = (j<7);
-
- e = (i<7);
-
- w = (i>0);
-
- if (n&&e) ne = board[i+1][j-1]; else ne = null;
-
- if (n&&w) nw = board[i-1][j-1]; else nw = null;
-
- if (s&&e) se = board[i+1][j+1]; else se = null;
-
- if (s&&w) sw = board[i-1][j+1]; else sw = null;
-
- eval(((j-from.y != 1)?"s":"n")+((i-from.x != 1)?"e":"w")+"=0;");
-
- if ((sw==0) && (integ(ne)==1)) return false;
-
- if ((se==0) && (integ(nw)==1)) return false;
-
- if ((nw==0) && (se==king_value)) return false;
-
- if ((ne==0) && (sw==king_value)) return false;
-
- return true;
-
-}
-
-
 
 message("You may begin! Select a piece to move.");
 
