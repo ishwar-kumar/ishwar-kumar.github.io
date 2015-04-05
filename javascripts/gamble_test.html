@@ -1,0 +1,64 @@
+<html>
+<head>
+    <title>Play test gamble to test martingale strategy for 4 sessions</title>
+</head>
+<body link="#FFFFFF" vlink="#FFFF00" alink="#FFFF00" bgcolor="#999999">
+
+<script language="JavaScript1.1">
+
+
+var grand_score = 0
+
+var session_score = 0
+
+/**
+ * Returns a random integer between min (inclusive) and max (inclusive)
+ * Using Math.round() will give you a non-uniform distribution!
+ */
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function display(message, grand, session) {
+    document.disp.score.value = message + "\n" + "Score of this session so far: " + session + "\n" +
+    "Your grand score of all days: " + grand;
+}
+function checkInputAndDoOutput() {
+    var input = document.getElementById('betAmount');
+    var betAmount = parseInt(input.value);
+    if (betAmount > 0) {
+        var result = getRandomInt(1,2);
+        if(result == 1) {
+          // Win
+          session_score = session_score + betAmount;
+          display("You won this BET", grand_score, session_score);
+        } else {
+          session_score = session_score - betAmount;;
+          display("You lost this BET", grand_score, session_score);
+        }
+    } else {
+        alert('Please enter amount more than 0');
+        input.focus();
+    }
+}
+
+function newSession() {
+    grand_score = grand_score + session_score;
+    session_score = 0;
+    display("added last session score to grand total", grand_score, session_score);
+}
+
+document.write("<table border=0 cellspacing=0 cellpadding=0>");
+
+document.write("<font color=\"white\">ScoreBoard</font><br><form name='disp'><textarea name='score' wrap=virtual rows=3 cols=25></textarea></form><br><br>");
+
+document.write("<input name=\"betAmount\" id=\"betAmount\" placeholder=\"bet amount\" type=\"text\">");
+document.write("<input type=button value=\"Place Bet\" onclick=\"checkInputAndDoOutput();\"><br><br>");
+
+display("", 0,0);
+document.write("<input type=button value=\"Start the Next Day\" onClick=\"newSession();\">");
+
+</script>
+
+</body>
+</html>
