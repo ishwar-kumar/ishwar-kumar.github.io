@@ -10,6 +10,7 @@
 var grand_score = 0
 
 var session_score = 0
+var continuous = 0
 
 /**
  * Returns a random integer between min (inclusive) and max (inclusive)
@@ -26,7 +27,8 @@ function display(message, grand, session) {
 function checkInputAndDoOutput() {
     var input = document.getElementById('betAmount');
     var betAmount = parseInt(input.value);
-    if (betAmount > 0) {
+    if ((betAmount > 0) && (continuous < 4)) {
+        continuous = continuous + 1;
         var result = getRandomInt(1,2);
         if(result == 1) {
           // Win
@@ -37,20 +39,26 @@ function checkInputAndDoOutput() {
           display("You lost this BET", grand_score, session_score);
         }
     } else {
-        alert('Please enter amount more than 0');
-        input.focus();
+        if((betAmount < 0)) {
+            alert('Please enter amount more than 0');
+            input.focus();
+        } else {
+            alert('Already lost continuous 4 games; restricted further betting today. start new day or quit betting!!');
+            input.focus();
+        }
     }
 }
 
 function newSession() {
     grand_score = grand_score + session_score;
     session_score = 0;
+    continuous = 0;
     display("added last session score to grand total", grand_score, session_score);
 }
 
 document.write("<table border=0 cellspacing=0 cellpadding=0>");
 
-document.write("<font color=\"white\">ScoreBoard</font><br><form name='disp'><textarea name='score' wrap=virtual rows=3 cols=25></textarea></form><br><br>");
+document.write("<font color=\"white\">ScoreBoard</font><br><form name='disp'><textarea name='score' wrap=virtual rows=3 cols=35></textarea></form><br><br>");
 
 document.write("<input name=\"betAmount\" id=\"betAmount\" placeholder=\"bet amount\" type=\"text\">");
 document.write("<input type=button value=\"Place Bet\" onclick=\"checkInputAndDoOutput();\"><br><br>");
